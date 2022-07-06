@@ -1,0 +1,143 @@
+!scriptcard  {{
+  --/|SET UP THE CARD
+  --#title|Scorching Ray
+  --#emoteBackground|#223030
+  --#emoteFontColor|#ad2430
+  --#titlecardbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/290548213/M8_eAC36lm7sZuszDcOa7Q/med.jpg?1655632718)
+  --#leftsub|Ranged Spell Attack
+  --#rightsub|Range 240' (Spell Sniper)
+  --#sourceToken|@{selected|token_id} 
+ 
+  --/|SET UP KEY VARIABLES
+  --=CastLevel|?{What Level Cast?|2|3}
+  --=HowManyRays|[$CastLevel]+1
+  --=NumberDice|2
+  --=Dice|6
+
+  --/|CHECK AND DEDUCT SPELL SLOT
+  -->GetAndCheckSlotInformation|
+  -->DeductSpellSlot|
+
+  --/|BEGIN TARGETING ROUTINE
+  --:MissileLoop| 
+    --=DisplayCount|[$DisplayCount] + 1
+
+    --?[$DisplayCount] -gt [$HowManyRays]|EndMacro
+    --?[$DisplayCount] -ne 1|[
+      --+|[hr]
+      --+|[br]
+      --+|[c][rbutton]Next Target::NEXT_TARGET[/rbutton][/c]
+      --+|[br]
+      --+|[c][b]Damage: [#FF0000][$Damage.Raw][/#][/b][/c]
+      --+|[br]
+      --X|
+    --]|
+
+    --/|- Target Selection -
+    --:NEXT_TARGET|
+    
+    --I Select the target of your Scorching Ray.;Scorching Ray #[$DisplayCount].|t;ThisTarget;Scorching Ray #[$DisplayCount]:
+    --#leftsub|Ray #[$DisplayCount.Raw]
+    --#rightsub|[*[&ThisTarget]:t-name]
+    --#targetToken|[&ThisTarget]
+
+    --/|- Check Range -
+    --~HowFarAway|distance;@{selected|token_id};[&ThisTarget]
+    --=HowFar|[$HowFarAway] * 5
+    --?[$HowFar] -gt 240|tooFar
+  
+    --/|- Start Firing Procedure -
+    --#emoteText|@{selected|token_name} sends a ray of black and purple flame roaring from his outstretched palm toward [*[&ThisTarget]:t-name]
+    -->PlayEffects|fireShot;beam-death beam-charm;none;none
+
+    -->RollDamage|
+
+    --=TargetAC|[*[&ThisTarget]:npc_ac]
+    --?[$TargetAC.Total] -gt 0|DoneWithAC
+    --=TargetAC|[*[&ThisTarget]:ac]
+
+    --:DoneWithAC|
+    --=AttackRoll|?{Roll Type|Standard, 1d20|Advantage, 2d20kh1|Disadvantage, 2d20kl1} + @{selected|spell_attack_bonus} [Ranged Spell Attack]
+    --+Attack|@{selected|token_name} rolls [$AttackRoll] vs AC [$TargetAC].
+    --?[$AttackRoll.Base] -eq 20|Crit
+    --?[$AttackRoll.Base] -eq 1|Fumble
+    --?[$AttackRoll.Total] -ge [$TargetAC.Total]|Hit
+    --+Miss|The attack missed.
+  
+  --^MissileLoop|  
+
+
+  --:Fumble|
+  --+Fumble!|The ray of dark flame fires off course and dissapates harmlessly...
+  --=XFumble|5d100
+  --=YFumble|5d100
+  --vpoint|[$XFumble] [$YFumble] missile-death
+
+  --^MissileLoop|
+
+
+  --:Hit|
+  --=Damage|[$AdjDmg]
+  --+Hit!|A ray of dark flame strikes [*[&ThisTarget]:t-name] burning them for [$Damage] points of damage on impact! 
+  -->PlayEffects|fireHit;none;glow-fire;none
+  -->ApplyToTargetToken|-[$Damage];none
+
+  --^MissileLoop|
+
+
+  --:Crit|
+  --=Damage|[$FinCrit] [Critical Hit!]
+  --+Critical Hit!|A ray of dark flame impacts [*[&ThisTarget]:t-name] violently, flaring up and searing them for [$Damage] points of damage!
+  -->PlayEffects|fireHit;none;burn-fire;none
+  -->ApplyToTargetToken|-[$Damage];none
+  
+  --^MissileLoop|
+
+
+  --:PlayEffects|
+  --a|[%1%]
+  --vbetweentokens|@{selected|token_id} [&ThisTarget] [%2%]
+  --vtoken|[&ThisTarget] [%3%]
+  --vtoken|@{selected|token_id} [%4%]
+  --<|
+
+  --:ApplyToTargetToken| Bar 1 Damage; Status Marker
+  --@token-mod|_ignore-selected _ids [&ThisTarget] _set bar1_value|[%1%]  _set statusmarkers|[%2%]
+  --<|
+
+  --:RollDamage|
+  +++dnd5elib+++
+  -->Lib5E_CheckDamageModifiers|ResistType;fire
+  --=DmgBase|[$NumberDice]d[$Dice]
+  --=DamageRoll|[$DmgBase][&ResistType]
+  --=CritDmg|[$NumberDice]d[$Dice]
+  --=AdjDmg|[$DamageRoll]
+  --=Critical|[$DmgBase]+[$CritDmg]
+  --=FinCrit|[$Critical][&ResistType]
+  --<|
+
+  --:GetAndCheckSlotInformation|
+  --=SlotLevel|[$CastLevel]
+  --=SlotsTotal|[*S:lvl[$SlotLevel]_slots_total]
+  --=SlotsExpended|[*S:lvl[$SlotLevel]_slots_expended]
+  --?[$SlotsExpended.Total] -eq [$SlotsTotal.Total]|NoSlotsLeft
+  --?[$SlotsExpended.Total] -gt [$SlotsTotal.Total]|NoSlotsLeft
+  --<| 
+
+  --:DeductSpellSlot|
+  --=SlotsExpended|[$SlotsExpended] +1 
+  --@setattr|_charid [*S:character_id] _lvl[$SlotLevel]_slots_expended|[$SlotsExpended] _silent
+  --=SlotsRemaining|[$SlotsTotal] - [$SlotsExpended] 
+  --+|[c][b]Level [$SlotLevel.Total] Spell Slots Left: [/b][$SlotsRemaining][/c] 
+  --<|
+ 
+  --:NoSlotsLeft|
+  --+|[b][*S:character_name] has no level [$SlotLevel.Total] spell slots available.[/b]
+  --X|
+
+  --:tooFar|
+  --+Out of Range|[*[&ThisTarget]:t-name] is too far away.
+  --=DisplayCount|[$DisplayCount]-1
+  --^MissileLoop|
+
+}}
