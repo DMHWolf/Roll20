@@ -1,0 +1,214 @@
+!scriptcard  {{
+
+  --/|* Set up card and constants for the macro *
+
+  --#title|Chaos Bolt
+  --#emoteBackground|#223030
+  --#emoteFontColor|#ad2430
+  --#titlecardbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/290353908/JCmSPaKhEGn_lreJX8t-0A/med.jpg?1655532899)
+  --#leftsub|Ranged Spell Attack
+  --#rightsub|Range 240' (Spell Sniper)
+  --#sourceToken|@{selected|token_id}
+
+  --=CastLevel|?{What Level Cast?|1|2|3}
+  
+  --/|* Check and deduct spellslots *
+  -->GetAndCheckSlotInformation|
+  -->DeductSpellSlot|
+  
+  --=Bounce|240
+  --&OldTarget|@{selected|token_id}
+
+  --:ChaosLoop|
+    --/|* Targeting sequence *
+    --+|[hr]
+    --+|[c][rbutton]Begin Target Sequence::NEXT_TARGET[/rbutton][/c]
+    --+|[hr]
+    --X|
+
+    --:NEXT_TARGET|
+    --I Select the target of your Chaos Bolt.;Target|t;ThisTarget;Target
+    --#leftsub|Bounce from [*[&OldTarget]:t-name]
+    --#rightsub|to[*[&ThisTarget]:t-name]
+    --#targetToken|[&ThisTarget]
+
+    --~HowFarAway|distance;[&OldTarget];[&ThisTarget]
+    --=HowFar|[$HowFarAway] * 5
+    --?[$HowFar] -gt [$Bounce]|tooFar
+
+    --/|* Damage calculation *
+    -->BoltDiceCalc|
+
+    --/|* Determine if this is the last or only bolt - Skip the next part if it is *
+    --?[$BoltDice1] -ne [$BoltDice2]|ChaosFinal
+  
+    --/|*************************************************************************
+    --/|* Energy Type & Resistance Determination then we roll damage*
+
+    --=BoltDice|[$BoltDice1]
+    -->ChaosBoltDice|[$BoltDice];&EnergyType
+    -->RollDamage|
+
+    +++VFXLib+++
+    -->LibFX_FXDefinitions|[&EnergyType];&Vfx
+
+    --/|* Set up the attack and damage reporting
+    --#leftsub|Bounce from [*[&OldTarget]:t-name]
+    --#rightsub|to [*[&ThisTarget]:t-name]
+    --#emoteText|A bolt of pure chaos launches from [*[&OldTarget]:t-name] to [*[&ThisTarget]:t-name] ...
+    --=AD|1d10
+    -->PlayEffects|Chaos[$AD];ChaosBolt;none;none
+  
+    --=TargetAC|[*[&ThisTarget]:npc_ac]
+    --?[$TargetAC.Total] -gt 0|DoneWithAC1
+    --=TargetAC|[*[&ThisTarget]:ac]
+
+    --:DoneWithAC1|
+    --=AttackRoll|?{Roll Type|Standard, 1d20|Advantage, 2d20kh1|Disadvantage, 2d20kl1} + @{selected|spell_attack_bonus} [Ranged Spell Attack]
+    --+Attack|@{selected|token_name} rolls [$AttackRoll] vs AC [$TargetAC].
+    --?[$AttackRoll.Base] -eq 20|Crit1
+    --?[$AttackRoll.Base] -eq 1|Fumble
+    --?[$AttackRoll.Total] -ge [$TargetAC.Total]|Hit1
+    --+Miss|The attack missed.
+    --X|Missed - We're Done 
+
+    --:HitLoop|
+
+    --/|* Set up variables for the bounce *
+    --&OldTarget|[&ThisTarget]
+    --=Bounce|60
+   --^ChaosLoop|  
+  
+  --/|****************************************************************************  
+  --:ChaosFinal|
+    --/|* Energy Type Determination *
+    -->ChooseType| 
+
+    --/|* Set up the attack and damage reporting
+    --#leftsub|Bounce from [*[&OldTarget]:t-name]
+    --#rightsub|To [*[&ThisTarget]:t-name]
+    --#emoteText|A bolt of pure chaos launches from [*[&OldTarget]:t-name] to [*[&ThisTarget]:t-name] ...
+    --=AD|1d10
+    -->PlayEffects|Chaos[$AD];ChaosBolt;none;none
+    
+    +++VFXLib+++
+    -->LibFX_FXDefinitions|[&EnergyType];&Vfx
+
+    --=TargetAC|[*[&ThisTarget]:npc_ac]
+    --?[$TargetAC.Total] -gt 0|DoneWithAC2
+    --=TargetAC|[*[&ThisTarget]:ac]
+
+    --:DoneWithAC2|
+    --=AttackRoll|?{Roll Type|Standard, 1d20|Advantage, 2d20kh1|Disadvantage, 2d20kl1} + @{selected|spell_attack_bonus} [Ranged Spell Attack]
+    --+Attack|@{selected|token_name} rolls [$AttackRoll] vs AC [$TargetAC].
+    --?[$AttackRoll.Base] -eq 20|Crit2
+    --?[$AttackRoll.Base] -eq 1|Fumble
+    --?[$AttackRoll.Total] -ge [$TargetAC.Total]|Hit2
+    --+Miss|The attack missed.
+    --X|Missed - We're Done 
+
+    --X|The End
+
+  --/|* The attack resolution subroutines that do all the damage *
+
+  --:Fumble|
+    --+Fumble!|The Chaos Bolt flies off course and dissapates harmlessly...
+    --=XFumble|2d20 * 70
+    --=YFumble|2d20 * 70
+    --vpoint|[$XFumble] [$YFumble] missile-[&Vfx]
+  --X|Fumbled - We're Done
+
+  --:Hit1|
+    --=Damage|[$AdjDmg.Total]
+    --+Hit!|The chaos orb strikes [*[&ThisTarget]:t-name] causing [$Damage] points of [&EnergyType] damage on impact! 
+    -->PlayEffects|[&Vfx]Hit;none;glow-[&Vfx];none
+    -->ApplyToTargetToken|-[$Damage.Total];none
+  --^HitLoop|
+
+  --:Hit2|
+    --=Damage|[$AdjDmg.Total]
+    --+Hit!|The chaos orb strikes [*[&ThisTarget]:t-name] causing [$Damage] points of [&EnergyType] damage on impact! 
+    -->PlayEffects|[&Vfx]Hit;none;glow-[&Vfx];none
+    -->ApplyToTargetToken|-[$Damage.Total];none
+  --X|
+
+  --:Crit1|
+    --=Damage|[$FinCrit.Total] [Critical Hit!]
+    --+Critical Hit!|The chaos orb impacts [*[&ThisTarget]:t-name] violently, exploding and causing [$Damage] points of [&EnergyType] damage!
+    -->PlayEffects|[&Vfx]Hit;none;burn-[&Vfx];none
+    -->ApplyToTargetToken|-[$Damage.Total];none
+  --^HitLoop|
+
+  --:Crit2|
+    --=Damage|[$FinCrit.Total] [Critical Hit!]
+    --+Critical Hit!|The chaos orb impacts [*[&ThisTarget]:t-name] violently, exploding and causing [$Damage] points of [&EnergyType] damage!
+    -->PlayEffects|[&Vfx]Hit;none;burn-[&Vfx];none
+    -->ApplyToTargetToken|-[$Damage.Total];none
+  --X|
+
+  --/|* All the other subroutines that do all the things * 
+
+  --:BoltDiceCalc|
+    --=BoltDice1|1d8
+    --=BoltDice2|1d8
+  --<|
+
+  --:ChooseType|
+    -->ChaosBoltDice|[$BoltDice1];&EnergyType1
+    -->ChaosBoltDice|[$BoltDice2];&EnergyType2
+    --I Please select dice result for your bolt;Energy Type?|q;EnergyType;Energy Type?|[&EnergyType1]|[&EnergyType2]
+  --<|
+  
+  --:ChaosBoltDice|RollVariableName;EnergyOutputStringName
+    --c[%1%]|1:[%2%];acid|2:[%2%];cold|3:[%2%];fire|4:[%2%];force|5:[%2%];lightning|6:[%2%];poison|7:[%2%];psychic|8:[%2%];thunder
+  --<|
+  
+  --:PlayEffects|
+    --a|[%1%]
+    --vbetweentokens|[&OldTarget] [&ThisTarget] [%2%]
+    --vtoken|[&ThisTarget] [%3%]
+    --vtoken|[&OldTarget] [%4%]
+  --<|
+
+  --:ApplyToTargetToken| Bar 1 Damage; Status Marker
+    --@token-mod|_ignore-selected _ids [&ThisTarget] _set bar1_value|[%1%]  _set statusmarkers|[%2%]
+  --<|
+
+  --:RollDamage|
+    +++dnd5elib+++
+    -->Lib5E_CheckDamageModifiers|ResistType;[&EnergyType]
+    --=BoltDmg|[$BoltDice1.Total]+[$BoltDice2.Total]
+    --=ExtraDmg|[$Castlevel]d6 
+    --=DmgBase|[$BoltDmg.Total]+[$ExtraDmg.Total]
+    --=DamageRoll|[$DmgBase.Total][&ResistType]
+    --=AdjDmg|[$DamageRoll.Total]
+    --=CritDmg|2d8
+    --=CritNxt|[$CritDmg.Total]+[$Castlevel]d6
+    --=Critical|[$CritNxt.Total]+[$DmgBase.Total]
+    --=FinCrit|[$Critical.Total][&ResistType]
+  --<|
+
+  --:GetAndCheckSlotInformation|
+    --=SlotLevel|[$CastLevel]
+    --=SlotsTotal|[*S:lvl[$SlotLevel]_slots_total]
+    --=SlotsExpended|[*S:lvl[$SlotLevel]_slots_expended]
+    --?[$SlotsExpended.Total] -eq [$SlotsTotal.Total]|NoSlotsLeft
+    --?[$SlotsExpended.Total] -gt [$SlotsTotal.Total]|NoSlotsLeft
+  --<| 
+
+  --:DeductSpellSlot|
+    --=SlotsExpended|[$SlotsExpended] +1 
+    --@setattr|_charid [*S:character_id] _lvl[$SlotLevel]_slots_expended|[$SlotsExpended] _silent
+    --=SlotsRemaining|[$SlotsTotal] - [$SlotsExpended] 
+    --+|[c][b]Level [$SlotLevel.Total] Spell Slots Left: [/b][$SlotsRemaining][/c] 
+  --<|
+ 
+  --:NoSlotsLeft|
+    --+|[b][*S:character_name] has no level [$SlotLevel.Total] spell slots available.[/b]
+  --X|
+
+  --:tooFar|
+    --+Out of Range|@{target|token_name} is too far away.
+  --^ChaosLoop|
+
+}}
