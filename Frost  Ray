@@ -1,0 +1,82 @@
+!scriptcard  {{
+  --#title|Ray Of Frost
+  --#titlecardbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/290153764/YbRQioqUPuWdlbhWdgQ4MQ/med.jpg?1655420340)
+  --#leftsub|Ranged Spell Attack
+  --#sourceToken|@{selected|token_id}
+  --#targetToken|@{target|token_id}
+  --#emoteText|@{selected|token_name} points their index finger at @{target|token_name} and a freezing sliver of shadow arcs toward them...
+  
+  -->PlayEffects|FrostRay;ShadowRay;none;none
+
+  --=NumberDice|@{selected|level}/5 +1
+  --=Dice|8
+  -->RollDamage|
+
+  --=TargetAC|@{target|npc_ac}
+  --?[$TargetAC.Total] -gt 0|DoneWithAC
+  --=TargetAC|@{target|ac}
+
+  --:DoneWithAC|
+  --=AttackRoll|?{Attack Type|Standard, 1d20|Advantage, 2d20kh1|Disadvantage, 2d20kl1} + @{selected|spell_attack_bonus} [Ranged Spell Attack]
+  --+Attack|@{selected|token_name} rolls [$AttackRoll] vs AC [$TargetAC].
+  --?[$AttackRoll.Base] -eq 20|Crit
+  --?[$AttackRoll.Base] -eq 1|Fumble
+  --?[$AttackRoll.Total] -ge [$TargetAC.Total]|Hit
+
+  --+Miss|The attack missed.
+  
+  --^Final|
+
+  --:Fumble|
+  --+Fumble!|The ray went way off course.
+  --=XFumble|5d100
+  --=YFumble|5d100
+  --a|FrostRay
+  --vpoint|[$XFumble] [$YFumble] missile-death
+  --^Final|
+
+  --:Hit|
+  --=Damage|[$AdjDmg]
+  --+Hit!|The shadow ray strikes @{target|token_name} for [$Damage] cold damage and slows them down.
+  -->PlayEffects|;none;glow-death;none
+  -->ApplyToTargetToken|-[$Damage];-10;Frozen::492767
+
+  --^Final|
+
+  --:Crit|
+  --=Damage|[$FinCrit] [Critical Hit!]
+  --+Critical Hit!|The shadowy ray strikes @{target|token_name} where they are most vulnerable, devastating them for [$Damage] cold damage and slowing them down.
+  -->PlayEffects|;none;burn-death;none
+  -->ApplyToTargetToken|-[$Damage];-10;Frozen::492767
+  
+
+  --:Final|
+
+  --X|
+
+  --:PlayEffects|
+  --a|[%1%]
+  --vbetweentokens|@{selected|token_id} @{target|token_id} [%2%]
+  --vtoken|@{target|token_id} [%3%]
+  --vtoken|@{selected|token_id} [%4%]
+  --<|
+
+  --:ApplyToTargetToken| Bar 1 Damage; Speed Change; Status Marker
+  --@token-mod|_ignore-selected _ids @{target|token_id} _set bar1_value|[%1%] _set bar3_value|[%2%] _set statusmarkers|[%3%]
+  --<|
+
+  --:RollDamage|
+  +++dnd5elib+++
+  -->Lib5E_CheckDamageModifiers|ResistType;cold
+  --=DmgBase|[$NumberDice]d[$Dice]
+  --=DamageRoll|[$DmgBase][&ResistType]
+  --=CritDmg|[$NumberDice]d[$Dice]
+  --=AdjDmg|[$DamageRoll]
+  --=Critical|[$DmgBase]+[$CritDmg]
+  --=FinCrit|[$Critical][&ResistType]
+  
+  --<|
+
+
+
+}}
