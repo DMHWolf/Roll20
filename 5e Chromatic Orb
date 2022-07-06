@@ -1,0 +1,127 @@
+!scriptcard  {{
+  --#title|Chromatic Orb
+  --#emoteBackground|#223030
+  --#emoteFontColor|#ad2430
+  --#titlecardbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/290353908/JCmSPaKhEGn_lreJX8t-0A/med.jpg?1655532899)
+  --#leftsub|Ranged Spell Attack
+ --#rightsub|Range 180' (Spell Sniper)
+  --#sourceToken|@{selected|token_id}
+  --#targetToken|@{target|token_id}
+
+  --~HowFarAway|distance;@{selected|token_id};@{target|token_id}
+  --=HowFar|[$HowFarAway] * 5
+  --?[$HowFar] -gt 180|tooFar
+ 
+  --&EnergyType|?{Energy Type?|acid|cold|fire|lightning|poison|thunder}
+  --=CastLevel|?{What Level Cast?|1|2|3}
+
+  -->GetAndCheckSlotInformation|
+  -->DeductSpellSlot|
+
+  --#emoteText|@{selected|token_name} hurls a sphere of [&EnergyType] the size of an orange toward @{target|token_name} ...
+  
+  --?[&EnergyType] -inc "acid"|[--&Vfx|acid--]|
+  --?[&EnergyType] -inc "cold"|[--&Vfx|frost--]|
+  --?[&EnergyType] -inc "fire"|[--&Vfx|fire--]|
+  --?[&EnergyType] -inc "lightning"|[--&Vfx|smoke--]|
+  --?[&EnergyType] -inc "poison"|[--&Vfx|slime--]|
+  --?[&EnergyType] -inc "thunder"|[--&Vfx|charm--]|
+
+  -->PlayEffects|[&Vfx]Shot;[&Vfx]Orb;none;none
+
+  --=NumberDice|[$CastLevel] + 2
+  --=Dice|8
+  -->RollDamage|
+
+  --=TargetAC|@{target|npc_ac}
+  --?[$TargetAC.Total] -gt 0|DoneWithAC
+  --=TargetAC|@{target|ac}
+
+  --:DoneWithAC|
+  --=AttackRoll|?{Roll Type|Standard, 1d20|Advantage, 2d20kh1|Disadvantage, 2d20kl1} + @{selected|spell_attack_bonus} [Ranged Spell Attack]
+  --+Attack|@{selected|token_name} rolls [$AttackRoll] vs AC [$TargetAC].
+  --?[$AttackRoll.Base] -eq 20|Crit
+  --?[$AttackRoll.Base] -eq 1|Fumble
+  --?[$AttackRoll.Total] -ge [$TargetAC.Total]|Hit
+  --+Miss|The attack missed.
+  
+  --^Final|
+
+  --:Fumble|
+  --+Fumble!|The orb of [&EnergyType] drifts off course and dissapates harmlessly...
+  --=XFumble|5d100
+  --=YFumble|5d100
+  --vpoint|[$XFumble] [$YFumble] missile-[&Vfx]
+
+  --^Final|
+
+  --:Hit|
+  --=Damage|[$AdjDmg]
+  --+Hit!|The orb of [&EnergyType] strikes @{target|token_name} causing [$Damage] points of damage on impact! 
+  -->PlayEffects|[&Vfx]Hit;none;glow-[&Vfx];none
+  -->ApplyToTargetToken|-[$Damage];none
+
+  --^Final|
+
+  --:Crit|
+  --=Damage|[$FinCrit] [Critical Hit!]
+  --+Critical Hit!|The orb of [&EnergyType] impacts @{target|token_name} violently, exploding and causing [$Damage] points of damage!
+  -->PlayEffects|[&Vfx]Hit;none;burn-[&Vfx];none
+  -->ApplyToTargetToken|-[$Damage];none
+  
+
+  --:Final|
+
+  --X|
+
+  --:Dis|
+  --+Disadvantage|The Undead creature has disadvantage on attacks until the end of @{selected|token_name}' next turn.
+  --@token-mod|_ignore_selected _ids @{target|token_id} _set statusmarkers|Cursed::492709
+ --<|
+
+  --:PlayEffects|
+  --a|[%1%]
+  --vbetweentokens|@{selected|token_id} @{target|token_id} [%2%]
+  --vtoken|@{target|token_id} [%3%]
+  --vtoken|@{selected|token_id} [%4%]
+  --<|
+
+  --:ApplyToTargetToken| Bar 1 Damage; Status Marker
+  --@token-mod|_ignore-selected _ids @{target|token_id} _set bar1_value|[%1%]  _set statusmarkers|[%2%]
+  --<|
+
+  --:RollDamage|
+  +++dnd5elib+++
+  -->Lib5E_CheckDamageModifiers|ResistType;[&EnergyType]
+  --=DmgBase|[$NumberDice]d[$Dice]
+  --=DamageRoll|[$DmgBase][&ResistType]
+  --=CritDmg|[$NumberDice]d[$Dice]
+  --=AdjDmg|[$DamageRoll]
+  --=Critical|[$DmgBase]+[$CritDmg]
+  --=FinCrit|[$Critical][&ResistType]
+  --<|
+
+  --:GetAndCheckSlotInformation|
+  --=SlotLevel|[$CastLevel]
+  --=SlotsTotal|[*S:lvl[$SlotLevel]_slots_total]
+  --=SlotsExpended|[*S:lvl[$SlotLevel]_slots_expended]
+  --?[$SlotsExpended.Total] -eq [$SlotsTotal.Total]|NoSlotsLeft
+  --?[$SlotsExpended.Total] -gt [$SlotsTotal.Total]|NoSlotsLeft
+  --<| 
+
+  --:DeductSpellSlot|
+  --=SlotsExpended|[$SlotsExpended] +1 
+  --@setattr|_charid [*S:character_id] _lvl[$SlotLevel]_slots_expended|[$SlotsExpended] _silent
+  --=SlotsRemaining|[$SlotsTotal] - [$SlotsExpended] 
+  --+|[c][b]Level [$SlotLevel.Total] Spell Slots Left: [/b][$SlotsRemaining][/c] 
+  --<|
+ 
+  --:NoSlotsLeft|
+  --+|[b][*S:character_name] has no level [$SlotLevel.Total] spell slots available.[/b]
+  --^Final|
+
+  --:tooFar|
+  --+Out of Range|@{target|token_name} is too far away.
+  --^Final|
+
+}}
