@@ -1,0 +1,165 @@
+!scriptcard  {{
+  
+--/|* CARD SET UP *
+
+  --#title|Eldritch Blast
+  --#titleFontColor|Purple
+  --#emoteBackground|black
+  --#emoteFontColor|purple
+  --#evenrowbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/292698635/83H7qYzTXvdHXiFX1EvHLg/med.jpg?1656819844)
+ --#oddRowFontColor|white
+ --#oddRowBackground|purple
+ --#evenRowFontColor|white
+ --#evenRowBackground|black
+ --#titlecardBackground|black
+ --#titlecardgradient|1
+  --#titlecardbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/292698635/83H7qYzTXvdHXiFX1EvHLg/med.jpg?1656819844)
+  --#subtitlefontcolor|grey
+  --#leftsub|Ranged Spell Attack
+  --#rightsub|120 feet
+  --#sourceToken|@{selected|token_id}
+
+--/|* SET UP KEY VARIABLES for # shots/damage
+ --=HDAdj|[*S:hit_dice^] +1
+ --=BoltAdj|[$HDAdj] \6
+ --=BoltNumber|[$BoltAdj] + 1
+ 
+ --=NumberDice|1
+ --=Dice|10
+ --&DamageType|force
+
+  --/|+DEBUG|HDAdj = [$HDAdj]
+  --/|+DEBUG|BoltAdj = [$BoltAdj]
+  --/|+DEBUG|BoltNumber = [$BoltNumber]
+
+ 
+ --/|* Firing Solution *
+ --:MissileLoop| 
+  --=DisplayCount|[$DisplayCount] + 1
+  --?[$DisplayCount] -gt [$BoltNumber]|Final
+  --?[$DisplayCount] -ne 1|[
+      --+|[hr]
+      --+|[br]
+      --+|[c][rbutton]Next Target::NEXT_TARGET[/rbutton][/c]
+      --+|[br]
+      --+|[c][b]Damage: [#FF0000][$Damage.Raw][/#][/b][/c]
+      --+|[br]
+      --X|
+    --]|
+  
+  --/|* Query Target and Roll Type
+ --:NEXT_TARGET
+ --iSelect a target for your Eldritch Blast;Continue|t;NextTarget;Target [$DisplayCount]||q;RollType;Roll Type?|Standard|Advantage|Disadvantage
+ --#emoteText|@{selected|token_name} launches an eldritch bolt of shadow from her palm toward [*[&NextTarget]:t-name]...
+
+ --?"[&RollType]" -inc "Standard"|=AttackRoll;1d20
+ --?"[&RollType]" -inc "Advantage"|=AttackRoll;2d20kh1
+ --?"[&RollType]" -inc "Disadvantage"|=AttackRoll;2d20kl1
+
+  --#targettoken|[&NextTarget]
+  --#leftsub|Blast #[$DisplayCount.Raw]
+  --#rightsub|[*[&NextTarget]:t-name]
+
+ --/|* Check Your Range *
+ --~HowFarAway|distance;@{selected|token_id};[&NextTarget]
+ --=HowFar|[$HowFarAway] * 5
+ --?[$HowFar] -gt 120|tooFar
+ 
+ --/|* Process the attack *
+ --+Roll Type:|[&RollType]
+
+ --#emoteText|[*S:t-name] sends a blast of eldritch shadow toward [*[&NextTarget]:t-name]...
+ -->PlayEffects|GhostShot;beam-death;none;none
+
+  --=TargetAC|[*[&NextTarget]:npc_ac]
+  --?[$TargetAC.Total] -gt 0|DoneWithAC
+  --=TargetAC|[*[&NextTarget]:ac]
+
+  --:DoneWithAC| 
+  -->RollDamage|[&DamageType]
+  --=AttackRoll|[$AttackRoll] + @{selected|spell_attack_bonus} [Ranged Spell Attack]
+  --+Blast [$DisplayCount]|@{selected|token_name} rolls [$AttackRoll] vs AC [$TargetAC].
+  --+|[br]
+  
+  --/|* Process the attack subs based on the attack roll *
+  --?[$AttackRoll.Base] -eq 20|Crit
+  --?[$AttackRoll.Base] -eq 1|Fumble
+  --?[$AttackRoll.Total] -ge [$TargetAC.Total]|Hit
+  --+Miss|The shadow blast misses...
+
+  --+|[hr ##782323]
+  --^MissileLoop|
+
+  --:Fumble|
+  --+Fumble!|The blast flies off course...
+  --=XFumble|2d20*70
+  --=YFumble|2d20*70
+  --vpoint|[$XFumble] [$YFumble] missile-death
+  --+|[hr ##782323]
+  --^MissileLoop|
+
+  --:Hit|
+  --=Damage|[$AdjDmg]
+  --+Hit!|A shadowy bolt thuds into [*[&NextTarget]:t-name] blasting them for [$Damage] [&DamageType] damage!
+  -->PlayEffects|flailstrike;none;glow-death;none
+  -->ApplyToTargetToken|-[$Damage]
+
+  --+|[hr ##782323]
+  --^MissileLoop|
+
+  --:Crit|
+  --=Damage|[$FinCrit][Critical Hit!]
+  --+Critical Hit!|An eldritch bolt of shadow strikes [*[&NextTarget]:t-name] where they are most vulnerable, rupturing them for [$Damage] [&DamageType] damage!
+  -->PlayEffects|flailstrike;none;burn-death;none
+  -->ApplyToTargetToken|-[$Damage]
+
+  --+|[hr ##782323]
+  --^MissileLoop|
+
+  --:Final|
+  --X|
+
+
+  --/|* Play Effects *
+  --:PlayEffects| Sound; between vfx; target vfx; source vfx
+  --a|[%1%]
+  --vbetweentokens|@{selected|token_id} [&NextTarget] [%2%]
+  --vtoken|@[&NextTarget] [%3%]
+  --vtoken|@{selected|token_id} [%4%]
+  --<|
+
+  --/|* Apply DMG to Target (need to config ids for token-mod if you want players to have access)
+  --:ApplyToTargetToken| Bar 1 Damage; //Speed Change; Status Marker
+  --@token-mod|_ignore-selected _ids [&NextTarget] _set bar1_value|[%1%] 
+  --/| *UNUSED* _set bar3_value|[%2%] _set statusmarkers|[%3%]
+  --<|
+
+  --:RollDamage| *Specify Damage Type in the Subroutine Call makes use of Kurt's Scriptcard Library*
+  --/|*Copy from Kurt's repo and put on a handout called ScriptCards Library dnd5elib
+  +++dnd5elib+++
+
+  -->Lib5E_CheckDamageModifiers|ResistType;[%1%]
+  --=FirstCut|[$NumberDice]d[$Dice]
+  
+  --=DmgBonus|@{selected|charisma_mod}
+  --=DmgBase|[$FirstCut]+[$DmgBonus]
+  --=DamageRoll|[$DmgBase][&ResistType]
+  --=AdjDmg|[$DamageRoll]
+
+  --=CritDmg|[$NumberDice]d[$Dice] 
+  --=Critical|[$DmgBase]+[$CritDmg]
+  --=FinCrit|[$Critical][&ResistType]
+  
+  --/|*DEBUG*+DiceRoll:|[$FirstCut]
+  --/|*DEBUG*+DmgBase:|[$DmgBase]
+  --/|*DEBUG*+DamageRoll:|[$DamageRoll]
+
+  --<|
+
+  --/|* If you select a target too far away, will go back one target or start the loop again *
+  --:tooFar|
+  --+Out of Range| is too far away.
+  --=DisplayCount|[$DisplayCount]-1
+  --^MissileLoop|
+
+}}
