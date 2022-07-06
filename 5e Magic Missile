@@ -1,0 +1,111 @@
+!scriptcard  {{
+  --/|SET UP THE CARD
+  --#title|Magic Missile
+  --#emoteBackground|#4634eb
+  --#emoteFontColor|#34ebe2
+  --#titlecardbackgroundimage|url(https://s3.amazonaws.com/files.d20.io/images/290653344/z6i-8ZdPkLvtY_4JStDulw/med.jpg?1655679760)
+  --#titleFontColor|#54b8af
+  --#subtitleFontColor|#4e4cc2
+  --#leftsub|Ranged Spell Attack
+  --#rightsub|Range 120'
+  --#sourceToken|@{selected|token_id} 
+ 
+  --/|SET UP KEY VARIABLES
+  --=CastLevel|?{What Level Cast?|1|2|3}
+  --=HowManyRays|[$CastLevel]+2
+  --=NumberDice|1
+  --=Dice|4
+
+  --/|CHECK AND DEDUCT SPELL SLOT
+  -->GetAndCheckSlotInformation|
+  -->DeductSpellSlot|
+
+  --/|BEGIN TARGETING ROUTINE
+  --:MissileLoop| 
+    --=DisplayCount|[$DisplayCount] + 1
+
+    --?[$DisplayCount] -gt [$HowManyRays]|EndMacro
+    --?[$DisplayCount] -ne 1|[
+      --+|[hr]
+      --+|[br]
+      --+|[c][rbutton]Next Target::NEXT_TARGET[/rbutton][/c]
+      --+|[br]
+      --+|[c][b]Damage: [#FF0000][$Damage.Raw][/#][/b][/c]
+      --+|[br]
+      --X|
+    --]|
+
+    --/|- Target Selection -
+    --:NEXT_TARGET|
+    
+    --I Select the target of your Magic Missile.;Magic Missile #[$DisplayCount].|t;ThisTarget;Magic Missile #[$DisplayCount]:
+    --#leftsub|Missile #[$DisplayCount.Raw]
+    --#rightsub|[*[&ThisTarget]:t-name]
+    --#targetToken|[&ThisTarget]
+
+    --/|- Check Range -
+    --~HowFarAway|distance;@{selected|token_id};[&ThisTarget]
+    --=HowFar|[$HowFarAway] * 5
+    --?[$HowFar] -gt 120|tooFar
+  
+    --/|- Start Firing Procedure -
+    --#emoteText|One of @{selected|token_name}'s silvery orbs floats up into the air and then streaks toward [*[&ThisTarget]:t-name]
+    -->PlayEffects|magicShot;charmOrb;none;bubbling-charm
+
+    -->RollDamage|
+
+    --:Hit|
+    --=Damage|[$AdjDmg]
+    --+Hit!|@{selected|token_name}'s silvery orb strikes [*[&ThisTarget]:t-name] inflicting [$Damage] points of force damage on impact!
+    --=Impact|1d3 
+    -->PlayEffects|magicHit[$Impact];none;glow-charm;none
+    -->ApplyToTargetToken|-[$Damage];none
+
+  --^MissileLoop|
+
+  --:PlayEffects|
+  --a|[%1%]
+  --vbetweentokens|@{selected|token_id} [&ThisTarget] [%2%]
+  --vtoken|[&ThisTarget] [%3%]
+  --vtoken|@{selected|token_id} [%4%]
+  --<|
+
+  --:ApplyToTargetToken| Bar 1 Damage; Status Marker
+  --@token-mod|_ignore-selected _ids [&ThisTarget] _set bar1_value|[%1%]  _set statusmarkers|[%2%]
+  --<|
+
+  --:RollDamage|
+  +++dnd5elib+++
+  -->Lib5E_CheckDamageModifiers|ResistType;force
+  --=DmgBase|[$NumberDice]d[$Dice] + 1
+  --=DamageRoll|[$DmgBase][&ResistType]
+  --=AdjDmg|[$DamageRoll]
+  --<|
+
+  --:GetAndCheckSlotInformation|
+  --=SlotLevel|[$CastLevel]
+  --=SlotsTotal|[*S:lvl[$SlotLevel]_slots_total]
+  --=SlotsExpended|[*S:lvl[$SlotLevel]_slots_expended]
+  --?[$SlotsExpended.Total] -eq [$SlotsTotal.Total]|NoSlotsLeft
+  --?[$SlotsExpended.Total] -gt [$SlotsTotal.Total]|NoSlotsLeft
+  --<| 
+
+  --:DeductSpellSlot|
+  --=SlotsExpended|[$SlotsExpended] +1 
+  --@setattr|_charid [*S:character_id] _lvl[$SlotLevel]_slots_expended|[$SlotsExpended] _silent
+  --=SlotsRemaining|[$SlotsTotal] - [$SlotsExpended] 
+  --+|[c][b]Level [$SlotLevel.Total] Spell Slots Left: [/b][$SlotsRemaining][/c] 
+  --<|
+ 
+  --:NoSlotsLeft|
+  --+|[b][*S:character_name] has no level [$SlotLevel.Total] spell slots available.[/b]
+  --X|
+
+  --:tooFar|
+  --+Out of Range|[*[&ThisTarget]:t-name] is too far away.
+  --=DisplayCount|[$DisplayCount]-1
+  --^MissileLoop|
+
+  --:EndMacro|
+  --X|
+}}
