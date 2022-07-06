@@ -1,0 +1,58 @@
+!scriptcard  {{
+  --#title|Skill Check
+ --#emoteText|@{selected|token_name}
+ --#sourceToken|@{selected|token_id}
+ --#leftsub|[*S:character_name]
+ --#rightsub|
+ --#titleFontColor|#FFFFFF
+ --#titleCardBackground|#616161
+ --#evenRowBackground|#B6AB91
+ --#evenRowFontColor|#000000
+ --#oddRowBackground|#CEC7B6
+ --#oddRowFontColor|#000000
+ --#emoteBackground|#FFFFFF
+ --#tableBorderRadius|8px
+
+--:Initial variable population|
+  --=strength_save_bonus|[*S:strength_save_bonus]
+  --=dexterity_save_bonus|[*S:dexterity_save_bonus]
+  --=constitution_save_bonus|[*S:constitution_save_bonus]
+  --=intelligence_save_bonus|[*S:intelligence_save_bonus]
+  --=wisdom_save_bonus|[*S:wisdom_save_bonus]
+  --=charisma_save_bonus|[*S:charisma_save_bonus]
+
+ +++dnd5elib+++
+ --&Character|@{selected|character_id}
+ -->Lib5E_Active_Save_Modifiers|[&Character];global_save_mod
+
+  --:Advantage, Disadvantage, Normal|
+  --&RollType|?{Advantage or Disadvantage?|Normal,1d20|Advantage,2d20kh1|Disadvantage,2d20kl1}
+  -->Type|
+
+  --:Bonus|
+  --&Type|[&reentryval]
+  --+Type of Skill Check: |[b][&Type][/b]
+  --=BonusType|[$[&Type]_bonus]
+  --+Bonus| [$BonusType]
+  --+Superiority Bonus?|[$Superiority]
+  
+   
+  --:Roll|
+  --=Save|[&RollType] + [$BonusType] [Bonus] + [&global_save_mod] [Superiority Dice]
+  --+Skill Check Roll is|[$Save] 
+
+ --X|
+
+--:Type|
+   --+Save Type?:|
+ --+|[t border=2 width=100%]
+[tr][td][rbutton]Strength::Bonus;strength[/rbutton][/td]
+[td][rbutton]Dexterity::Bonus;dexterity[/rbutton][/td][/tr]
+[tr][td][rbutton]Constitution::Bonus;constitution[/rbutton][/td]
+[td][rbutton]Intelligence::Bonus;intelligence[/rbutton][/td][/tr]
+[tr][td][rbutton]Wisdom::Bonus;wisdom[/rbutton][/td]
+[td][rbutton]Charisma::Bonus;charisma[/rbutton][/td][/tr]
+[/t]
+ --X|
+
+}}
