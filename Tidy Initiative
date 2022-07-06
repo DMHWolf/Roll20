@@ -1,0 +1,33 @@
+!scriptcard  {{
+  --#title|Initiative Roll
+ --#emoteText|@{selected|token_name}
+ --#sourceToken|@{selected|token_id}
+ --#leftsub|[*S:character_name]
+ --#rightsub|
+ --#titleFontColor|#FFFFFF
+ --#titlecardbackgroundimage|url('https://s3.amazonaws.com/files.d20.io/images/293128927/aJJhbzJOQcp2yg3N8ONnLA/med.jpg?1657072780')
+ --#evenRowBackground|#B6AB91
+ --#evenRowFontColor|#000000
+ --#oddRowBackground|#CEC7B6
+ --#oddRowFontColor|#000000
+ --#emoteBackground|#FFFFFF
+ --#tableBorderRadius|8px
+
+--:Initial variable population|
+  --=initiative_bonus|[*S:initiative_bonus]
+
+  --:Advantage, Disadvantage, Normal|
+  --&RollType|?{Advantage or Disadvantage?|Normal,1d20|Advantage,2d20kh1|Disadvantage,2d20kl1}
+  -->Type|
+
+  
+  --:Roll|
+  --=Init|[&RollType] + [$initiative_bonus] [Bonus]
+  --+Initiative Roll is|[$Init]
+  --~|turnorder;addtoken;[*S:t-id];[$Init]
+  --a|DinoRoar
+
+ --X|
+
+
+}}
