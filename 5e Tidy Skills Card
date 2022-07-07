@@ -1,0 +1,104 @@
+!scriptcard  {{
+  --#title|Skill Check
+ --#emoteText|@{selected|token_name}
+ --#sourceToken|@{selected|token_id}
+ --#leftsub|[*S:character_name]
+ --#rightsub|
+ --#titleFontColor|#FFFFFF
+ --#titlecardbackgroundimage|url('https://s3.amazonaws.com/files.d20.io/images/293128927/aJJhbzJOQcp2yg3N8ONnLA/med.jpg?1657072780')
+ --#evenRowBackground|#B6AB91
+ --#evenRowFontColor|#000000
+ --#oddRowBackground|#CEC7B6
+ --#oddRowFontColor|#000000
+ --#emoteBackground|#FFFFFF
+ --#tableBorderRadius|8px
+
+--:Initial variable population|
+  --=acrobatics_bonus|[*S:acrobatics_bonus]
+  --=animal_handling_bonus|[*S:animal_handling_bonus]
+  --=arcana_bonus|[*S:arcana_bonus ]
+  --=athletics_bonus|[*S:athletics_bonus]
+  --=deception_bonus|[*S:deception_bonus]
+  --=history_bonus|[*S:history_bonus]
+  --=insight_bonus|[*S:insight_bonus]
+  --=intimidation_bonus|[*S:intimidation_bonus]
+  --=investigation_bonus|[*S:investigation_bonus]
+  --=medicine_bonus|[*S:medicine_bonus]
+  --=nature_bonus|[*S:nature_bonus]
+  --=perception_bonus|[*S:perception_bonus]
+  --=performance_bonus|[*S:performance_bonus]
+  --=persuasion_bonus|[*S:persuasion_bonus]
+  --=religion_bonus|[*S:religion_bonus]
+  --=sleight_of_hand_bonus|[*S:sleight_of_hand_bonus]
+  --=stealth_bonus|[*S:stealth_bonus]
+  --=survival_bonus|[*S:survival_bonus]
+
+--&Character|@{selected|character_id}
++++dnd5elib+++
+-->Lib5E_Active_Global_Skill_Modifiers|[&Character];global_skill_mod
+ -->Type|
+
+--:Bonus|
+  --&Type|[&reentryval]
+  --+Type of Skill Check: |[b][&Type][/b]
+  --=BonusType|[$[&Type]_bonus]
+  --+Proficiency + Ability Bonus| [$BonusType]
+  --+Global Skill Mod|[&global_skill_mod]
+
+--:Advantage, Disadvantage, Normal|
+  --&RollType|?{Advantage or Disadvantage?|Normal,1d20|Advantage,2d20kh1|Disadvantage,2d20kl1}
+   
+--:Roll|
+  --=SkillC|[&RollType] + [$BonusType] [Bonus] [&global_skill_mod] [Global Skill Mod]
+  --+Skill Check Roll is|[$SkillC] 
+
+ --X|
+
+ --:SuperiorAdd|
+ --+Select Superiority Ability|[rbutton:#fff:#f00]Ambush(Stealth)::AmbushS[/rbutton][br][rbutton:#fff:#0f0]Survival Superiority::SurvivalS[/rbutton][br][rbutton:#fff:#00f]Tactical Assessment::TacticalS[/rbutton]
+ --X|
+
+ --:AmbushS|
+ --=Superiority|1d8 
+ --&Type|stealth 
+ --^Bonus|
+ --X|
+                 
+ --:SurvivalS|
+  --=Superiority|1d8 \ 2 
+  --+Skill Check Type?:|
+  --+|[t border=2 width=100%][tr][td][rbutton]Athletics::Bonus;athletics[/rbutton][/td][td][rbutton]Nature::Bonus;nature[/rbutton][/td][/tr][tr][td][rbutton]Perception::Bonus;perception[/rbutton][/td][td][rbutton]Survival::Bonus;survival[/rbutton][/td][/tr][/t]
+ --X|
+
+ --:TacticalS|
+ --=Superiority|1d8 
+ --+Skill Check Type?:|
+ --+|[t border=2 width=100%][tr][td][rbutton]Investigation::Bonus;investigation[/rbutton][/td][td][rbutton]History::Bonus;history[/rbutton][/td][/tr][tr][td][rbutton]Insight::Bonus;insight[/rbutton][/td][td][/td][/tr][/t]
+ --X|
+
+
+--:Type|
+   --+Skill Check Type?:|
+ --+|[t border=2 width=100%]
+[tr][td][rbutton]Acrobatics::Bonus;acrobatics[/rbutton][/td]
+[td][rbutton]Animal Handling::Bonus;animal_handling[/rbutton][/td][/tr]
+[tr][td][rbutton]Arcana::Bonus;arcana[/rbutton][/td]
+[td][rbutton]Athletics::Bonus;athletics[/rbutton][/td][/tr]
+[tr][td][rbutton]Deception::Bonus;deception[/rbutton][/td]
+[td][rbutton]History::Bonus;history[/rbutton][/td][/tr]
+[tr][td][rbutton]Insight::Bonus;insight[/rbutton][/td]
+[td][rbutton]Intimidation::Bonus;intimidation[/rbutton][/td][/tr]
+[tr][td][rbutton]Investigation::Bonus;investigation[/rbutton][/td]
+[td][rbutton]Medicine::Bonus;medicine[/rbutton][/td][/tr]
+[tr][td][rbutton]Nature::Bonus;nature[/rbutton][/td]
+[td][rbutton]Perception::Bonus;perception[/rbutton][/td][/tr]
+[tr][td][rbutton]Performance::Bonus;performance[/rbutton][/td]
+[td][rbutton]Persuasion::Bonus;persuasion[/rbutton][/td][/tr]
+[tr][td][rbutton]Religion::Bonus;religion[/rbutton][/td]
+[td][rbutton]Sleight of Hand::Bonus;sleight_of_hand[/rbutton][/td][/tr]
+[tr][td][rbutton]Stealth::Bonus;stealth[/rbutton][/td]
+[td][rbutton]Survival::Bonus;survival[/rbutton][/td][/tr]
+[/t]
+ --X|
+
+}}
